@@ -1,0 +1,89 @@
+<template>
+    <div if:true={showSpinner} class="slds-is-relative">
+        <lightning-spinner class="slds-is-fixed" alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
+    </div>
+    <c-sf_look-up-component object-name="Product2" field-name="Name" label="Products Search" placeholder="Search product" icon-name="standard:account" onaddproductsevent={handleAddproductsFromLookup} class="slds-m-bottom_large">
+    </c-sf_look-up-component>
+    <template if:true={showDataTable}>
+        <lightning-card class="slds-m-top_large">
+            <table>
+                <tr>
+                  <template for:each={fieldLabels} for:item="label" for:index="index"> 
+                    <th class="slds-p-left_small" key={label.index}>
+                        {label}
+                    </th>
+                  </template>
+                </tr>
+                <template for:each={tableData} for:item="td" for:index="i"> 
+                    <tr key={td.id}>
+                            <template for:each={td.data} for:item="fldData" for:index="index">
+                                <td class="slds-p-left_small" key={fldData.index}>
+                                    <template if:true={fldData.isInput}>
+                                        <template if:true={fldData.isCurrencyType}>
+                                            <lightning-formatted-number type={fldData.inputType} class="innerTableField" key={fldData.index}  value={fldData.displayValue} disabled={fldData.disabled} data-key={fldData.id} data-is-bundle={fldData.isBundle} data-field-api-name={fldData.fieldApiName} onchange={handleInputChange} formatter={currencyIsoCode} format-style="currency" currency-code={currencyIsoCode}></lightning-formatted-number>
+                                        </template>
+    
+                                        <template if:false={fldData.isCurrencyType}>
+                                            <div class="slds-grid slds-grid_vertical-align-center">
+                                                <input class="slds-col inputNoBorder" type={fldData.inputType}  value={fldData.displayValue} disabled={fldData.disabled} data-key={td.id} data-is-bundle={fldData.isBundle} data-field-api-name={fldData.fieldApiName} onchange={handleInputChange}/>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <template if:false={fldData.isInput}>
+                                        <template if:true={fldData.buttonIsAdd}>
+                                            <lightning-icon size="x-small" data-key={td.id} data-is-bundle={fldData.isBundle} data-button-label={staticLabels.ADD} icon-name={staticLabels.ADD_ICON} onclick={handleOptionsVisibility} alternative-text="Show/Hide" title="Show/Hide">
+                                            </lightning-icon>
+                                        </template>
+                                        <template if:true={fldData.isEditIcon}>
+                                            <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" class="slds-m-left_small" data-key={td.id} onclick={cloneBundleQli}>
+                                            </lightning-icon>
+                                        </template>
+                                    </template>
+                                </td>
+                            </template>
+                    </tr>
+    
+                        <template if:true={td.showOptionQlis}>
+                            <table key={td.id} class="test2">
+                                <tr>
+                                    <template for:each={optionQlisFieldLabels} for:item="opLabel" for:index="i">
+                                        <th class="slds-p-left_small" key={opLabel.i}>{opLabel}</th>
+                                    </template>
+                                </tr>
+    
+                                <template for:each={td.optionQlis} for:item="opQli">
+                                    <tr key={opQli.id} class="test1">
+                                        <template for:each={opQli.data} for:item="opFldData" for:index="j">
+                                            <td class="slds-p-left_small" key={opFldData.j}>
+                                                 <template if:true={opFldData.isInput}>
+                                                <template if:true={opFldData.isCurrencyType}>
+                                                    <lightning-formatted-number type={opFldData.inputType} value={opFldData.displayValue} disabled={opFldData.disabled} data-key={opQli.id} data-is-bundle={opFldData.isBundle} data-field-api-name={opFldData.fieldApiName} onchange={handleInputChange} formatter={currencyIsoCode} format-style="currency" currency-code={currencyIsoCode}></lightning-formatted-number>
+                                                </template>
+                                                <template if:false={opFldData.isCurrencyType}>
+                                                    <input class="inputNoBorder" type={opFldData.inputType} value={opFldData.displayValue} disabled={opFldData.disabled} data-key={opQli.id} data-is-bundle={opFldData.isBundle} data-field-api-name={opFldData.fieldApiName} onchange={handleInputChange}/>
+                                                </template>
+                                            </template>
+                                            <template if:false={opFldData.isInput}>
+                                                <template if:false={opFldData.buttonIsAdd}>
+                                                    <lightning-icon size="x-small" data-key={opQli.id} data-is-bundle={opFldData.isBundle} onclick={handleOptionsVisibility} data-button-label={staticLabels.ACTIONS}  icon-name={staticLabels.EDIT_ICON} alternative-text="Edit" title="Edit">
+                                                    </lightning-icon>
+                                                </template>
+                                            </template>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </table>
+                        </template>
+                </template>
+              </table>
+        </lightning-card>
+    </template>
+
+    <template if:true={showSaveCancelButtons}>
+        <lightning-layout class="slds-m-top_medium">
+            <lightning-button label={staticLabels.CANCEL_BUTTON_LABEL} onclick={refreshComponent}></lightning-button>
+            <lightning-button label={staticLabels.SAVE_BUTTON_LABEL} onclick={updateQliRecords} variant="brand"></lightning-button>
+        </lightning-layout>
+    </template>
+</template>

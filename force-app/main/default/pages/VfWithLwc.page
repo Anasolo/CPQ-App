@@ -1,0 +1,15 @@
+<apex:page standardController="Account" showHeader="false" sidebar="false">
+    <apex:includeLightning />    
+    <div id="LightningComponentid" />    
+    <script>
+    $Lightning.use("c:AppForVf", function() {
+        $Lightning.createComponent("c:sf_addProducts",
+          { 
+          },
+          "LightningComponentid",
+          function(cmp) {
+             console.log('LWC Componenet added in VF page');
+          });
+    });
+    </script>
+</apex:page>

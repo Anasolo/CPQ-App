@@ -1,0 +1,182 @@
+<template>
+    <div if:true={showSpinner} class="slds-is-relative">
+        <lightning-spinner class="slds-is-fixed" alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
+    </div>
+   <div class="headerButtonsCont">
+        <lightning-button variant="brand"
+            label="Add Products"
+            title="Add Products"
+            onclick={fetchData}
+            class="slds-m-bottom_large">
+        </lightning-button>
+
+        <lightning-button class="slds-m-right_small" variant="brand"
+            title="Accept" 
+            onclick={CallAcceptQuote}
+            label={acceptQuote}>
+        </lightning-button>
+   </div>
+ <!--Use template if:true to display/hide popup based on isModalOpen value--> 
+ <template if:true={isModalOpen}>
+     <!-- Modal/Popup Box LWC starts here -->
+     <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+         <div class="slds-modal__container slds-p-around_large">
+             <!-- Modal/Popup Box LWC header here -->
+             <header class="slds-modal__header">
+                 <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                     <lightning-icon icon-name="utility:close"
+                         alternative-text="close"
+                         variant="inverse"
+                         size="small" >
+                    </lightning-icon>
+                 </button>
+                 <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{customLabels.ADD_PRODUCTS_HEADER_TEXT}</h2>
+             </header>
+             <template if:false={showFinalPage}>
+                <template if:true={showInnerSpinner}>
+                    <lightning-spinner alternative-text="Loading" size="medium" class="spinnerClass"></lightning-spinner>
+                </template>
+                <div>
+                    <div class="slds-combobox_container" aria-expanded="true" aria-haspopup="listbox" role="combobox">
+                        <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open">
+                            <lightning-input onchange={filterProducts} onclick={showRecords} class="inputBox" type="search" autocomplete="off" variant="label-hidden" placeholder={placeholder}></lightning-input>
+                            
+                            <template if:true={showDropdown}>
+                            <div class="whiteBackground dropdownBox">
+                                <table>
+                                    <tr>
+                                      <th class="slds-p-left_small">{customLabels.MARK}</th>
+                                      <th class="slds-p-left_small"> {customLabels.NAME} </th>
+                                      <th class="slds-p-left_small"> {customLabels.PRICE} </th>
+                                      <th class="slds-p-left_small"> {customLabels.QUANTITY} </th>
+                                      <th class="slds-p-left_small"> {customLabels.ADD} </th>
+                                    </tr>
+                                    <template for:each={renderedProducts} for:item="rec"> 
+                                        <tr key={rec.id} data-key={rec.id>
+                                            <td class="slds-p-left_small">
+                                                <temoplate if:false={rec.standAlone}>
+                                                    <lightning-input data-key={rec.id} type="checkbox-button" label="Add salami" value="salami" onchange={renderOptionProducts} disabled={rec.disabled}>
+                                                    </lightning-input>
+                                                </temoplate>
+
+                                                <temoplate if:true={rec.standAlone}>
+                                                    <lightning-input data-key={rec.id} type="checkbox" onchange={renderOptionProducts} disabled={rec.disabled}>
+                                                    </lightning-input>
+                                                </temoplate>
+                                            </td>
+                                            <td class="slds-p-left_small"> 
+                                                 <span>{rec.name}</span>
+                                            </td>
+                                            <td class="slds-p-left_small"> 
+                                                <lightning-formatted-number  value={rec.price} disabled=true formatter={pliCurrency} format-style="currency" currency-code={pliCurrency}>
+                                                </lightning-formatted-number>
+                                                <!-- <span>{rec.price} {pliCurrency} </span>  -->
+                                            </td>
+                                            <td class="slds-p-left_small"> 
+                                                <input class="inputNoBorder" type="number" data-key={rec.id} onchange={handleQtyChange} value={rec.quantity} />
+                                                <!-- <lightning-input variant="label-hidden" data-key={rec.id} onchange={handleQtyChange} value={rec.quantity}>
+                                                </lightning-input> -->
+                                            </td>
+                                            <td class="slds-p-left_small"> 
+                                                <button class="slds-button slds-button_neutral slds-button_stretch tdAddButton" data-key={rec.id} onclick={addProductsInTable}>
+                                                    {customLabels.ADD}
+                                                </button>
+                                            </td>
+                                        </tr>
+
+                                        <template if:true={rec.showOptionProducts}>
+                                            <table key={rec.id} class="slds-m-around_small">
+                                                <tr>
+                                                    <th class="slds-p-left_small">{customLabels.MARK}</th>
+                                                    <th class="slds-p-left_small"> {customLabels.NAME} </th>
+                                                    <th class="slds-p-left_small"> {customLabels.PRICE} </th>
+                                                    <th class="slds-p-left_small"> {customLabels.QUANTITY} </th>
+                                                </tr>
+                                            <template for:each={rec.optionProducts} for:item="optionalProd">
+                                                    <tr key={optionalProd.Id} data-key={optionalProd.Id}>
+                                                        <td class="slds-p-left_small">
+                                                            <lightning-input checked={optionalProd.checked} disabled={optionalProd.disabled} data-key={optionalProd.Id} type="checkbox" onchange={addOptionalProduct}>
+                                                            </lightning-input>
+                                                        </td>
+                                                        <td class="slds-p-left_small">
+                                                                <span class="verticalAlign slds-truncate">
+                                                                    {optionalProd.Name}
+                                                                </span>
+                                                        </td>
+
+                                                        <td class="slds-p-left_small">
+                                                            <lightning-formatted-number  value={optionalProd.price} disabled=true formatter={pliCurrency} format-style="currency" currency-code={pliCurrency}>
+                                                            </lightning-formatted-number>
+                                                            <!-- <span>
+                                                                {optionalProd.price} {pliCurrency}
+                                                            </span> -->
+                                                        </td>
+
+                                                        <td class="slds-p-left_small">
+                                                            <input class="inputNoBorder" type="number" data-key={optionalProd.Id} onchange={handleQtyChange} value={optionalProd.quantity}/>
+                                                        </td>
+                                                    </tr>
+                                            </template>
+                                            </table>
+                                        </template>
+                                    </template>
+                                  </table>
+                                </div>
+                            </template>
+                        </div>
+
+                        <template if:true={showTable}>
+                            <div class="slds-m-top_large whiteBackground">
+                                <table>
+                                    <tr>
+                                        <th class="slds-p-left_small"> {customLabels.NAME} </th>
+                                        <th class="slds-p-left_small"> {customLabels.PRICE} </th>
+                                        <th class="slds-p-left_small"> {customLabels.QUANTITY} </th>
+                                    </tr>
+                                    <template for:each={dataTableProducts} for:item="td" for:index="i"> 
+                                        <tr key={td.id}>
+                                            <td class="slds-p-left_small">
+                                                {td.name}
+                                            </td>
+            
+                                            <td class="slds-p-left_small">
+                                                <lightning-formatted-number  value={td.price} disabled=true formatter={pliCurrency} format-style="currency" currency-code={pliCurrency}>
+                                                </lightning-formatted-number>
+                                            </td>
+            
+                                            <td class="slds-p-left_small">
+                                                 {td.quantity} 
+                                            </td>
+                                        </tr>
+                                    </template>
+                                  </table>
+                                </div>
+
+                                <div class="slds-float_right slds-m-top_small whiteBackground">
+                                    <p class="slds-m-top_medium slds-m-left_small slds-text-heading_small"> 
+                                        {customLabels.TOTAL}:
+                                        <lightning-formatted-number class="slds-m-left_small" value={totalPrice} disabled=true formatter={pliCurrency} format-style="currency" currency-code={pliCurrency}>
+                                        </lightning-formatted-number>
+                                    </p>
+                                </div>
+                        </template>
+                    </div>
+                </div>
+             </template>
+
+             <footer class="slds-modal__footer">
+                 <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">{customLabels.CANCEL}</button>
+                 <template if:false={showFinalPage}>
+                    <button class="slds-button slds-button_brand" title="OK" onclick={addProduct}>{customLabels.ADD_PRODUCTS_HEADER_TEXT}</button>
+               </template>
+               <template if:true={showFinalPage}>
+                <button class="slds-button slds-button_brand" title="OK" onclick={addProduct}>{customLabels.ADD}</button>
+              </template>
+             </footer>
+         </div>
+     </section>
+     <div class="slds-backdrop slds-backdrop_open"></div>
+
+ </template>
+    
+</template>

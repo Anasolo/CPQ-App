@@ -1,0 +1,19 @@
+table, th, td {
+    border-collapse: collapse;
+    color:rgb(150, 148, 146);
+}
+
+td {
+    border: 1px solid rgb(201, 199, 197);
+}
+
+.inputNoBorder {
+    border: none;
+    outline: none;
+    width: 100%;
+}
+
+.test {
+    z-index: 1000;
+    margin-bottom: 1000px;
+}

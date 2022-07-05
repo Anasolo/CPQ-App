@@ -1,0 +1,38 @@
+<template>
+    <template if:true={showCreateButtons}>
+        <lightning-layout>
+            <lightning-button label={labels.editShippingLabel} onclick={createButtonHandler}></lightning-button>
+        </lightning-layout>
+        <div>
+            <lightning-layout class="slds-m-top_small">
+                <lightning-button label={labels.editBillingLabel} onclick={createButtonHandler}></lightning-button>
+            </lightning-layout>
+        </div>
+    </template>
+
+    <template if:true={showMap}>
+        <lightning-input-address
+            address-label="Address"
+            street-label="Street"
+            city-label="City"
+            country-label="Country"
+            province-label="Province"
+            postal-code-label="PostalCode"
+            street={addressFields.street}
+            city={addressFields.city}
+            country={addressFields.country}
+            province={addressFields.state}
+            postal-code={addressFields.postalCode}
+            show-address-lookup=true
+            field-level-help={labels.mapHelpTextLabel} 
+            onchange={handleAddressChange}
+        >
+        </lightning-input-address>   
+
+        <lightning-button class="slds-m-top_medium" variant="brand" label={labels.saveLabel} onclick={saveHandler}></lightning-button>
+        <lightning-button class="slds-m-top_medium slds-m-left_small" label={labels.cancelLabel} onclick={cancelHandler}></lightning-button>
+
+        <lightning-map class="slds-m-top_medium" map-markers={mapMarkers} zoom-level={zoomLevel} list-view={listView} show-footer>
+        </lightning-map>
+    </template>
+</template>

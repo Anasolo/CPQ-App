@@ -1,0 +1,10 @@
+<template>
+    <div class="slds-box">
+        <p style="color:white;">{recordId}</p>
+        <template if:true={isLoaded}>
+            <div class="slds-p-around_x-large">
+                <lightning-spinner alternative-text="Loading" size="large" variant="brand"></lightning-spinner>
+            </div>
+        </template>
+    </div>
+</template>

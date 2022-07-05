@@ -1,0 +1,40 @@
+.slds-modal__container {
+    max-width: 60rem !important;
+    width: 80% !important;
+}
+
+.slds-combobox_container {
+    height: 300px;
+    overflow-y: scroll;
+    background-color: white;
+}
+
+th, td {
+    border: 1px solid rgb(201, 199, 197);
+}
+
+.tdAddButton {
+    background-color: rgb(1, 118, 211);
+    color: white;
+    font-size: 16px;
+    text-transform: uppercase;
+}
+
+.whiteBackground {
+    background-color: white;
+}
+
+.addButtonCont {
+    text-align: center;
+}
+
+.inputNoBorder {
+    border: none;
+    outline: none;
+    width: 100%;
+}
+
+.headerButtonsCont {
+    display: flex;
+    flex-direction: row-reverse;
+}

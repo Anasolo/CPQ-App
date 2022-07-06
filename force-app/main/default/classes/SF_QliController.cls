@@ -10,6 +10,7 @@
 */
 
 public with sharing class SF_QliController {
+    //Yoooooooooo
     /**
     * @author: Jubo M.
     * @description: This method Quote Line items of the Quote of which Id is passed to the method and dynamically choosing the fields according to the second parameter
@@ -235,7 +236,7 @@ public with sharing class SF_QliController {
                 }
                 successMessage = Label.cloneQliSuccessMessageLabel;
             } catch(DmlException ex) {
-                System.debug('@@@@@Error during inserting bundleQli: ' + ex.getMessage());
+                System.debug('@@@@@Error occured during inserting bundleQli: ' + ex.getMessage());
             }
 
 

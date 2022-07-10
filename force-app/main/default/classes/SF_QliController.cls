@@ -10,15 +10,15 @@
 */
 
 public with sharing class SF_QliController {
-    //Yoooooooooooo
+    //Yoooooooooooo 
     /**
     * @author: Jubo M.
     * @description: This method Quote Line items of the Quote of which Id is passed to the method and dynamically choosing the fields according to the second parameter
     */   
     @AuraEnabled
     public static List<QlisData> getQlis(Id quoteId, List<String> fieldsToQUery) {
-        Map<Id, SF_Quote_Line_Item__c> bundleQlisMap = new  Map<Id, SF_Quote_Line_Item__c>();
-        Map<Id, List<SF_Quote_Line_Item__c>> qlisMap = new  Map<Id, List<SF_Quote_Line_Item__c>>();
+        Map<Id, SF_Quote_Line_Item__c> bundleQlisMap = new Map<Id, SF_Quote_Line_Item__c>();
+        Map<Id, List<SF_Quote_Line_Item__c>> qlisMap = new Map<Id, List<SF_Quote_Line_Item__c>>();
         List<QlisData> qlisDataList = new List<QlisData>();
 
         String query = '';
@@ -127,11 +127,11 @@ public with sharing class SF_QliController {
         Map<String, String> prodIdQliIdMap = new Map<String, String>();
         List<String> bundleProdIds = new List<String>();
         List<String> opProdIds = new List<String>();
+        List<String> bundleQlisIds = new List<String>();
+        List<String> standAloneQliIds = new List<String>();
 
          for(String productId : productIdQliInfoMap.keySet()) {
-            System.debug('@@@@@@entered in loop: ' + productIdQliInfoMap.get(productId));
             if(productIdQliInfoMap.get(productId).get('hasOptionalProducts') == 'true') {
-                System.debug('@@@@@@entered in if');
                 bundleProdIds.add(productId);
                 bundleQlisToInsert.add(new SF_Quote_Line_Item__c(Name = productId, SF_Quote__c = quoteId, Product__c = productId, Quantity__c = Integer.valueOf(productIdQliInfoMap.get(productId).get('quantity')), SF_Price_List_Item__c = productIdQliInfoMap.get(productId).get('priceListItem')));
             } else if(productIdQliInfoMap.get(productId).get('hasOptionalProducts') == 'false') {
@@ -142,8 +142,18 @@ public with sharing class SF_QliController {
         }
         System.debug('@@@@@@bundelQlisTOInssert: ' + bundleQlisToInsert);
         try {
-            insert bundleQlisToInsert;
-            insert standAloneQlisToInsert;
+            Database.SaveResult[] srBundleQlisList = Database.insert(bundleQlisToInsert);
+
+            for (Database.SaveResult sr : srBundleQlisList) {
+                bundleQlisIds.add(sr.getId());
+            }
+
+            Database.SaveResult[] srStandAloneQlisList = Database.insert(standAloneQlisToInsert);
+
+            for (Database.SaveResult sr : srStandAloneQlisList) {
+                standAloneQliIds.add(sr.getId());
+            }
+
         } catch(DmlException ex) {
             System.debug(ex.getMessage());
         }
@@ -172,20 +182,27 @@ public with sharing class SF_QliController {
         } catch(DmlException ex) {
             System.debug(ex.getMessage());
         }
+
+        Map<Id, Double> opQlisPricesMap = computePrices(bundleQlisIds, standAloneQliIds);
         
+        List<SF_Quote_Line_Item__c> opQlisToUpdate = new List<SF_Quote_Line_Item__c>();
 
-        // List<SF_Quote_Line_Item__c> qlisToInsert = new List<SF_Quote_Line_Item__c>();
+        List<SF_Quote_Line_Item__c> saQlisToUpdate = new List<SF_Quote_Line_Item__c>();
 
-        // for(String productId : productIdQliInfoMap.keySet()) {
-        //     qlisToInsert.add(new SF_Quote_Line_Item__c(Name = productId, SF_Quote__c = quoteId, Product__c = productId, Quantity__c = Integer.valueOf(productIdQliInfoMap.get(productId).get('quantity')), SF_Price_List_Item__c = productIdQliInfoMap.get(productId).get('priceListItem')));
-        // }
+        for(SF_Quote_Line_Item__c qli : opQlisToInsert) {
+            opQlisToUpdate.add(new SF_Quote_Line_Item__c(Id = qli.Id, Total_Price__c = opQlisPricesMap.get(qli.Id)));
+        }
 
-        // try {
-        //     insert qlisToInsert;
-        // } catch(DmlException ex) {
-        //     System.debug(ex.getMessage());
-        //     throw new AuraHandledException(ex.getMessage());
-        // }
+        for(SF_Quote_Line_Item__c qli : standAloneQlisToInsert) {
+            saQlisToUpdate.add(new SF_Quote_Line_Item__c(Id = qli.Id, Total_Price__c = opQlisPricesMap.get(qli.Id)));
+        }
+
+        try {
+            update opQlisToUpdate;
+            update saQlisToUpdate;
+        } catch(DmlException ex) {
+            System.debug(ex.getMessage());
+        }
 
         return successMessage;
     }
@@ -225,7 +242,7 @@ public with sharing class SF_QliController {
        
             Id bundleQliId;
 
-            SF_Quote_Line_Item__c bundleQli = new SF_Quote_Line_Item__c(Name = bundleQliMap.get('Name'), Unit_Price__c = Double.valueOf(bundleQliMap.get('Unit_Price__c')), List_Price__c = Double.valueOf(bundleQliMap.get('List_Price__c')), Is_Bundle__c = true, Product__c=bundleQliMap.get('Product__c'), SF_Price_List_Item__c = bundleQliMap.get('SF_Price_List_Item__c'), Quantity__c = Integer.valueOf(bundleQliMap.get('Quantity__c')), SF_Quote__c = bundleQliMap.get('SF_Quote__c'));
+            SF_Quote_Line_Item__c bundleQli = new SF_Quote_Line_Item__c(Name = bundleQliMap.get('Name'), Unit_Price__c = Double.valueOf(bundleQliMap.get('Unit_Price__c')), List_Price__c = Double.valueOf(bundleQliMap.get('List_Price__c')), Total_Price__c = Double.valueOf(bundleQliMap.get('Total_Price__c')),Is_Bundle__c = true, Product__c=bundleQliMap.get('Product__c'), SF_Price_List_Item__c = bundleQliMap.get('SF_Price_List_Item__c'), Quantity__c = Integer.valueOf(bundleQliMap.get('Quantity__c')), SF_Quote__c = bundleQliMap.get('SF_Quote__c'));
 
             budnleQliListToInsert.add(bundleQli);
 
@@ -242,7 +259,7 @@ public with sharing class SF_QliController {
 
             if(opQliMap != null && !opQliMap.isEmpty()) {
                 for(Map<String, String> opQli : opQliMap) {
-                    qlisToInsert.add(new SF_Quote_Line_Item__c(Name = opQli.get('Name'), Quote_Line_Item__c = bundleQliId, Unit_Price__c = Double.valueOf(opQli.get('Unit_Price__c')), List_Price__c = Double.valueOf(opQli.get('List_Price__c')), Is_Bundle__c = false, Product__c=opQli.get('Product__c'), SF_Price_List_Item__c = opQli.get('SF_Price_List_Item__c'), Quantity__c = Integer.valueOf(opQli.get('Quantity__c')), SF_Quote__c = opQli.get('SF_Quote__c')));
+                    qlisToInsert.add(new SF_Quote_Line_Item__c(Name = opQli.get('Name'), Quote_Line_Item__c = bundleQliId, Unit_Price__c = Double.valueOf(opQli.get('Unit_Price__c')), List_Price__c = Double.valueOf(opQli.get('List_Price__c')), Total_Price__c = Double.valueOf(opQli.get('Total_Price__c')),Is_Bundle__c = false, Product__c=opQli.get('Product__c'), SF_Price_List_Item__c = opQli.get('SF_Price_List_Item__c'), Quantity__c = Integer.valueOf(opQli.get('Quantity__c')), SF_Quote__c = opQli.get('SF_Quote__c')));
                 }
     
                 try {
@@ -255,6 +272,117 @@ public with sharing class SF_QliController {
        }
 
        return successMessage;
+    }
+
+    public static Map<Id, Double> computePrices(List<String> bundleQlisIds, List<String> standAloneQlisIds) {
+
+        System.debug('@@@@bundleQlisIds: ' + bundleQlisIds);
+        System.debug('@@@@standAloneQlisIds: ' + standAloneQlisIds);
+
+        //pliQrangesListMap,  QliIdPliIdMaap, productQliMap
+       Map<Id, Id> productQliMap = new Map<Id, Id>();
+       Map<Id, Id> qliPliMap = new Map<Id, Id>();
+       List<String> productIds = new List<String>();
+       List<String> standAloneProductIds = new List<String>();
+       Map<Id, Id> productStandAloneQliMap = new Map<Id, Id>();
+       Map<Id, Id> saQliPliMap = new Map<Id, Id>();
+
+       List<SF_Quote_Line_Item__c> opQlis = [SELECT Id, Product__c, Quantity__c FROM SF_Quote_Line_Item__c WHERE Quote_Line_Item__c IN :bundleQlisIds];
+
+       List<SF_Quote_Line_Item__c> standAloneQlis = [SELECT Id, Product__c, Quantity__c FROM SF_Quote_Line_Item__c WHERE Id IN :standAloneQlisIds];
+
+       System.debug('@@@@opQlis: ' + opQlis);
+       System.debug('@@@@ostandAloneQlispQlis: ' + standAloneQlis);
+
+       for(SF_Quote_Line_Item__c qli : opQlis) {
+        productQliMap.put(qli.Product__c, qli.Id);
+        productIds.add(qli.Product__c);
+       }
+
+       for(SF_Quote_Line_Item__c qli : standAloneQlis) {
+        productStandAloneQliMap.put(qli.Product__c, qli.Id);
+        standAloneProductIds.add(qli.Product__c);
+       }
+
+       System.debug('@@@@productQliMap: ' + productQliMap);
+       System.debug('@@@@productStandaloneQlismap: ' + productStandAloneQliMap);
+
+       List<SF_Price_List_Item__c> plis = [SELECT Id, Product__c FROM SF_Price_List_Item__c WHERE Product__c IN :productIds AND Active__c = TRUE];
+
+       List<SF_Price_List_Item__c> standAlonePlis = [SELECT Id, Product__c FROM SF_Price_List_Item__c WHERE Product__c IN :standAloneProductIds AND Active__c = TRUE];
+
+       System.debug('@@@@plis: ' + plis);
+       System.debug('@@@@plis: ' + standAlonePlis);
+
+       for(SF_Price_List_Item__c pli : plis) {
+            qliPliMap.put(productQliMap.get(pli.Product__c), pli.Id);
+       }
+
+       for(SF_Price_List_Item__c pli : standAlonePlis) {
+        saQliPliMap.put(productStandAloneQliMap.get(pli.Product__c), pli.Id);
+   }
+
+
+       List<SF_Quantity_Range__c> qRanges = [SELECT Id, Quantity_From__c, Quantity_To__c, Price__c, Price_List_Item__c FROM SF_Quantity_Range__c WHERE Price_List_Item__c IN :plis];
+
+       List<SF_Quantity_Range__c> saQRanges = [SELECT Id, Quantity_From__c, Quantity_To__c, Price__c, Price_List_Item__c FROM SF_Quantity_Range__c WHERE Price_List_Item__c IN :standAlonePlis];
+
+       System.debug('@@@@qRanges: ' + qRanges);
+       System.debug('@@@@saQRanges: ' + saQRanges);
+
+       Map<Id, List<SF_Quantity_Range__c>> pliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
+       Map<Id, List<SF_Quantity_Range__c>> saPliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
+
+       for(SF_Quantity_Range__c qr : qRanges) {
+            if(!pliQrangesMap.containsKey(qr.Price_List_Item__c)) {
+                pliQrangesMap.put(qr.Price_List_Item__c, new List<SF_Quantity_Range__c>());
+            } 
+
+            pliQrangesMap.get(qr.Price_List_Item__c).add(qr);
+       }
+
+       for(SF_Quantity_Range__c qr : saQRanges) {
+        if(!saPliQrangesMap.containsKey(qr.Price_List_Item__c)) {
+            saPliQrangesMap.put(qr.Price_List_Item__c, new List<SF_Quantity_Range__c>());
+        } 
+
+        saPliQrangesMap.get(qr.Price_List_Item__c).add(qr);
+    }
+
+        System.debug('@@@@pliQrangesMap: ' + pliQrangesMap);
+        System.debug('@@@@saPliQrangesMap: ' + saPliQrangesMap);
+
+       Map<Id, List<SF_Quantity_Range__c>> qliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
+
+       for(Id qliId : qliPliMap.keySet()) {
+        qliQrangesMap.put(qliId, pliQrangesMap.get(qliPliMap.get(qliId)));
+       }
+
+       
+       System.debug('@@@@@@QliQrangesMap: ' + qliQrangesMap);
+
+       Map<Id, Double> qliPriceMap = new Map<Id, Double>();
+
+       for(SF_Quote_Line_Item__c qli : opQlis) {
+         for(SF_Quantity_Range__c qr : qliQrangesMap.get(qli.Id)) {
+            if(qli.Quantity__c >= qr.Quantity_From__c && qli.Quantity__c <= qr.Quantity_To__c) {
+                qliPriceMap.put(qli.Id, qr.Price__c * qli.Quantity__c);
+            }
+         }
+       }
+
+       for(SF_Quote_Line_Item__c qli : standAloneQlis) {
+         for(SF_Quantity_Range__c qr : saPliQrangesMap.get(saQliPliMap.get(qli.Id))) {
+            if(qli.Quantity__c >= qr.Quantity_From__c && qli.Quantity__c <= qr.Quantity_To__c) {
+                qliPriceMap.put(qli.Id, qr.Price__c * qli.Quantity__c);
+            }
+         }
+       }
+
+       System.debug('@@@@@@qliPriceMap: ' + qliPriceMap);
+
+       return qliPriceMap;
+
     }
 
     public class QlisData {

@@ -25,14 +25,17 @@
     
                                         <template if:false={fldData.isCurrencyType}>
                                             <div class="slds-grid slds-grid_vertical-align-center">
+                                           
                                                 <input class="slds-col inputNoBorder" type={fldData.inputType}  value={fldData.displayValue} disabled={fldData.disabled} data-key={td.id} data-is-bundle={fldData.isBundle} data-field-api-name={fldData.fieldApiName} onchange={handleInputChange}/>
                                             </div>
                                         </template>
                                     </template>
                                     <template if:false={fldData.isInput}>
                                         <template if:true={fldData.buttonIsAdd}>
-                                            <lightning-icon size="x-small" data-key={td.id} data-is-bundle={fldData.isBundle} data-button-label={staticLabels.ADD} icon-name={staticLabels.ADD_ICON} onclick={handleOptionsVisibility} alternative-text="Show/Hide" title="Show/Hide">
-                                            </lightning-icon>
+                                            <template if:false={td.Product__r.Stand_Alone__c}>
+                                                <lightning-icon size="x-small" data-key={td.id} data-is-bundle={fldData.isBundle} data-button-label={staticLabels.ADD} icon-name={staticLabels.ADD_ICON} onclick={handleOptionsVisibility} alternative-text="Show/Hide" title="Show/Hide">
+                                                </lightning-icon>
+                                            </template>
                                         </template>
                                         <template if:true={fldData.isEditIcon}>
                                             <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" class="slds-m-left_small" data-key={td.id} onclick={cloneBundleQli}>

@@ -367,7 +367,7 @@ export default class Sf_addProducts extends LightningElement {
         this.tableData.forEach(td => {
             if(td.id === e.target.getAttribute('data-key')) {
                 td.data.shift();
-                let fldDataToPass = td.data.filter(el => td.data.indexOf(el) !== 0 && td.data.indexOf(el) !== td.data.length - 1);
+                const fldDataToPass = td.data.filter(el => td.data.indexOf(el) !== 0 && td.data.indexOf(el) !== td.data.length - 1);
                 bundleQli['Product__c'] = td.Product__c;
                 bundleQli['SF_Price_List_Item__c'] = td.SF_Price_List_Item__c;
                 bundleQli['SF_Quote__c'] = this.quoteId;
@@ -378,7 +378,7 @@ export default class Sf_addProducts extends LightningElement {
                 
                 if(td.Product__r.Stand_Alone__c === false) {
                     td.optionQlis.forEach(opQli => {
-                        let opFldDataToPass = opQli.data.filter(el => opQli.data.indexOf(el) !== 0 && opQli.data.indexOf(el) !== opQli.data.length - 1);
+                        const opFldDataToPass = opQli.data.filter(el => opQli.data.indexOf(el) !== 0 && opQli.data.indexOf(el) !== opQli.data.length - 1);
                         let obj = {};
                         obj['Product__c'] = opQli.Product__c;
                         obj['SF_Price_List_Item__c'] = opQli.SF_Price_List_Item__c;

@@ -275,11 +275,6 @@ public with sharing class SF_QliController {
     }
 
     public static Map<Id, Double> computePrices(List<String> bundleQlisIds, List<String> standAloneQlisIds) {
-
-        System.debug('@@@@bundleQlisIds: ' + bundleQlisIds);
-        System.debug('@@@@standAloneQlisIds: ' + standAloneQlisIds);
-
-        //pliQrangesListMap,  QliIdPliIdMaap, productQliMap
        Map<Id, Id> productQliMap = new Map<Id, Id>();
        Map<Id, Id> qliPliMap = new Map<Id, Id>();
        List<String> productIds = new List<String>();
@@ -291,8 +286,6 @@ public with sharing class SF_QliController {
 
        List<SF_Quote_Line_Item__c> standAloneQlis = [SELECT Id, Product__c, Quantity__c FROM SF_Quote_Line_Item__c WHERE Id IN :standAloneQlisIds];
 
-       System.debug('@@@@opQlis: ' + opQlis);
-       System.debug('@@@@ostandAloneQlispQlis: ' + standAloneQlis);
 
        for(SF_Quote_Line_Item__c qli : opQlis) {
         productQliMap.put(qli.Product__c, qli.Id);
@@ -304,15 +297,10 @@ public with sharing class SF_QliController {
         standAloneProductIds.add(qli.Product__c);
        }
 
-       System.debug('@@@@productQliMap: ' + productQliMap);
-       System.debug('@@@@productStandaloneQlismap: ' + productStandAloneQliMap);
 
        List<SF_Price_List_Item__c> plis = [SELECT Id, Product__c FROM SF_Price_List_Item__c WHERE Product__c IN :productIds AND Active__c = TRUE];
 
        List<SF_Price_List_Item__c> standAlonePlis = [SELECT Id, Product__c FROM SF_Price_List_Item__c WHERE Product__c IN :standAloneProductIds AND Active__c = TRUE];
-
-       System.debug('@@@@plis: ' + plis);
-       System.debug('@@@@plis: ' + standAlonePlis);
 
        for(SF_Price_List_Item__c pli : plis) {
             qliPliMap.put(productQliMap.get(pli.Product__c), pli.Id);
@@ -320,15 +308,12 @@ public with sharing class SF_QliController {
 
        for(SF_Price_List_Item__c pli : standAlonePlis) {
         saQliPliMap.put(productStandAloneQliMap.get(pli.Product__c), pli.Id);
-   }
+       }
 
 
        List<SF_Quantity_Range__c> qRanges = [SELECT Id, Quantity_From__c, Quantity_To__c, Price__c, Price_List_Item__c FROM SF_Quantity_Range__c WHERE Price_List_Item__c IN :plis];
 
        List<SF_Quantity_Range__c> saQRanges = [SELECT Id, Quantity_From__c, Quantity_To__c, Price__c, Price_List_Item__c FROM SF_Quantity_Range__c WHERE Price_List_Item__c IN :standAlonePlis];
-
-       System.debug('@@@@qRanges: ' + qRanges);
-       System.debug('@@@@saQRanges: ' + saQRanges);
 
        Map<Id, List<SF_Quantity_Range__c>> pliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
        Map<Id, List<SF_Quantity_Range__c>> saPliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
@@ -349,17 +334,11 @@ public with sharing class SF_QliController {
         saPliQrangesMap.get(qr.Price_List_Item__c).add(qr);
     }
 
-        System.debug('@@@@pliQrangesMap: ' + pliQrangesMap);
-        System.debug('@@@@saPliQrangesMap: ' + saPliQrangesMap);
-
        Map<Id, List<SF_Quantity_Range__c>> qliQrangesMap = new Map<Id, List<SF_Quantity_Range__c>>();
 
        for(Id qliId : qliPliMap.keySet()) {
         qliQrangesMap.put(qliId, pliQrangesMap.get(qliPliMap.get(qliId)));
        }
-
-       
-       System.debug('@@@@@@QliQrangesMap: ' + qliQrangesMap);
 
        Map<Id, Double> qliPriceMap = new Map<Id, Double>();
 
@@ -379,10 +358,7 @@ public with sharing class SF_QliController {
          }
        }
 
-       System.debug('@@@@@@qliPriceMap: ' + qliPriceMap);
-
        return qliPriceMap;
-
     }
 
     public class QlisData {

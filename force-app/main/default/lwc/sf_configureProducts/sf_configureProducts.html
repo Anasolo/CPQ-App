@@ -38,7 +38,12 @@
                                             </template>
                                         </template>
                                         <template if:true={fldData.isEditIcon}>
-                                            <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" class="slds-m-left_small" data-key={td.id} onclick={cloneBundleQli}>
+                                            <template if:true={td.Product__r.Stand_Alone__c}>
+                                                <lightning-icon size="x-small" data-key={td.id} data-is-bundle={fldData.isBundle} onclick={handleOptionsVisibility} data-button-label={staticLabels.ACTIONS}  icon-name={staticLabels.EDIT_ICON} alternative-text="Edit" title="Edit">
+                                                </lightning-icon>
+                                            </template>
+
+                                            <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" data-key={td.id} onclick={cloneBundleQli}>
                                             </lightning-icon>
                                         </template>
                                     </template>

@@ -216,17 +216,54 @@ public with sharing class SF_QliController {
         String successMessage;
         List<SF_Quote_Line_Item__c> qlisToUpdate = new List<SF_Quote_Line_Item__c>();
 
+        List<String> opQlisIds = new List<String>();
+        List<String> saQlisIds = new List<String>();
+
         for(Map<String, String> qliObj : qlis) {
+            if(qliObj.get('standAlone') == 'true') {
+                saQlisIds.add(qliObj.get('id'));
+            } else {
+                opQlisIds.add(qliObj.get('id'));
+            }
             qlisToUpdate.add(new SF_Quote_Line_Item__c(Id=qliObj.get('id'), Quantity__c=Integer.valueOf(qliObj.get('newValue'))));
         }
 
         try {
             update qlisToUpdate;
-            successMessage = Label.quoteLineItemsUpdateSuccessLabel;
-            return successMessage;
         } catch(DmlException ex) {
             throw new AuraHandledException(ex.getMessage());
         }
+
+        List<SF_Quote_Line_Item__c> bundleQlis = [SELECT Id, Quote_Line_Item__c FROM SF_Quote_Line_Item__c WHERE Id IN :opQlisIds];
+
+        List<String> bundleQlisIds = new List<String>();
+
+        for(SF_Quote_Line_Item__c qli : bundleQlis) {
+            bundleQlisIds.add(qli.Quote_Line_Item__c);
+        }
+
+        Map<Id, Double> opQlisPricesMap = computePrices(bundleQlisIds, saQlisIds);
+
+        List<SF_Quote_Line_Item__c> opQlisToUpdate = new List<SF_Quote_Line_Item__c>();
+        List<SF_Quote_Line_Item__c> saQlisToUpdate = new List<SF_Quote_Line_Item__c>();
+
+        for(String qliId : opQlisIds) {
+            opQlisToUpdate.add(new SF_Quote_Line_Item__c(Id = qliId, Total_Price__c = opQlisPricesMap.get(qliId)));
+        }
+
+        for(String qliId : saQlisIds) {
+            saQlisToUpdate.add(new SF_Quote_Line_Item__c(Id = qliId, Total_Price__c = opQlisPricesMap.get(qliId)));
+        }
+
+        try {
+            update opQlisToUpdate;
+            update saQlisToUpdate;
+            successMessage = Label.quoteLineItemsUpdateSuccessLabel;
+        } catch(DmlException ex) {
+            System.debug(ex.getMessage());
+        }
+
+        return successMessage;
     }
 
      /**

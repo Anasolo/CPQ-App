@@ -207,14 +207,14 @@ export default class Sf_addProducts extends LightningElement {
         this.tableData.forEach(td => {
             td.data.forEach(fldData => {
                 if(fldData.disabled === false) {
-                    this.qlisToUpdate.push({id: td.id, fieldToUpdate: fldData.fieldApiName, newValue: fldData.displayValue.toString()});
+                    this.qlisToUpdate.push({id: td.id, fieldToUpdate: fldData.fieldApiName, newValue: fldData.displayValue.toString(), standAlone: true});
                 }
             });
 
             td.optionQlis.forEach(opQli => {
                 opQli.data.forEach(fldData => {
                     if(fldData.disabled === false) {
-                        this.qlisToUpdate.push({id: opQli.id, fieldToUpdate: fldData.fieldApiName, newValue: fldData.displayValue.toString()});
+                        this.qlisToUpdate.push({id: opQli.id, fieldToUpdate: fldData.fieldApiName, newValue: fldData.displayValue.toString(), standAlone: false});
                     }
                 });
             })

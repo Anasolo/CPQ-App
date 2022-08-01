@@ -4,6 +4,7 @@ import { getRecord } from 'lightning/uiRecordApi';
 import fetchRecords from '@salesforce/apex/SF_LookUpController.fetchRecords';
 import getProductPliPriceMap from '@salesforce/apex/SF_LookUpController.getProductPliPriceMap';
 import insertQlis from '@salesforce/apex/SF_QliController.insertQlis';
+import reprice from '@salesforce/apex/SF_ProductRulesService.reprice';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import 	addLabel from '@salesforce/label/c.addLabel';
 import 	nameLabel from '@salesforce/label/c.nameLabel';
@@ -66,9 +67,9 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
     wiredRecord({ error, data }) {
         if (error) {
             if(!error.body.message) {
-                this.showAlert('error', null, this.customLabels.GET_PRICE_LIST_ERROR);
+                this.showAlert('error', null, this.customLabels.GET_PRICE_LIST_ERROR, null);
             } else {
-                this.showAlert('error', error.body.message, this.customLabels.GET_PRICE_LIST_ERROR);
+                this.showAlert('error', error.body.message, this.customLabels.GET_PRICE_LIST_ERROR, null);
             }
             
         } else if (data) {
@@ -154,7 +155,7 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
             this.showSpinner = false;
             this.assignPricesToOptionProducts();
         }).catch(error => {
-            this.showAlert('error', null, this.customLabels.FETCHING_PRODUCTS_ERROR);
+            this.showAlert('error', null, this.customLabels.FETCHING_PRODUCTS_ERROR, null);
             this.showSpinner = false;
         })
     }
@@ -261,10 +262,10 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
             
         }).catch(error => {
             if(!error.body.message) {
-                this.showAlert('error', null, this.customLabels.GET_PRODUCTS_PLI_ERROR);
+                this.showAlert('error', null, this.customLabels.GET_PRODUCTS_PLI_ERROR, null);
                 this.showSpinner = false;
             } else {
-                this.showAlert('error', error.body.message, this.customLabels.GET_PRODUCTS_PLI_ERROR);
+                this.showAlert('error', error.body.message, this.customLabels.GET_PRODUCTS_PLI_ERROR, null);
                 this.showSpinner = false;
             }
         })
@@ -398,7 +399,7 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
      
             insertQlis({productIdQliInfoMap: this.productsToAdd, quoteId: this.quoteId}).then(res => {
                 if(!!res && typeof(res) === 'string') {
-                    this.showAlert('success', null, res);
+                    this.showAlert('success', null, res, null);
                     this.showInnerSpinner = false;
                     this.isModalOpen = false;
                     this.products = [];
@@ -413,14 +414,14 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
                    
                     this.dispatchEvent(addProductsEvent);
                 } else {
-                    this.showAlert('error', null, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR);
+                    this.showAlert('error', null, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR, null);
                 }
             }).catch(error => {
                 if(!error.body.message) {
-                    this.showAlert('error', null, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR);
+                    this.showAlert('error', null, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR, null);
                     this.showSpinner = false;
                 } else {
-                    this.showAlert('error', error.body.message, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR);
+                    this.showAlert('error', error.body.message, this.customLabels.QUOTE_LINE_ITEMS_CREATION_ERROR, null);
                     this.showSpinner = false;
                 }
             });
@@ -429,14 +430,44 @@ export default class sf_lookUpController extends NavigationMixin(LightningElemen
 
     /**
     * @author: Jubo M.
+    * @description: This method calls apex method which will conduct repricing
+    */   
+    doReprice() {
+        this.showSpinner = true;
+        reprice({quoteId: this.quoteId}).then(res => {
+            console.log('@@@@@@@@@@@@@@@@reprice res: ', res);
+            const repriceEvent = new CustomEvent("repriceevent", {
+                detail: null,
+                bubbles: true
+              });
+           
+            this.dispatchEvent(repriceEvent);
+            if(!!res && Array.isArray(res)) {
+                console.log('@@@@entered inside if in repriceresponse');
+                res.forEach(prodData => {
+                    prodData.prodRuleData.forEach(prodRuleDataItem => {
+                        this.showAlert(prodRuleDataItem.type, prodRuleDataItem.message, null, 'sticky');
+                    })
+                })
+
+                this.showSpinner = false;
+            }
+        }).catch(err => {
+            console.log('Error occured while trying to conduct repricing: ', err);
+        })
+    }
+
+    /**
+    * @author: Jubo M.
     * @description: This method takes care of showing toast events
     */   
-    showAlert(type, message, additionalData) {
+    showAlert(type, message, additionalData, mode) {
         this.dispatchEvent(
             new ShowToastEvent({
                 title: additionalData,
                 message : message,
                 variant: type,
+                mode: mode
             }),
         );
     }

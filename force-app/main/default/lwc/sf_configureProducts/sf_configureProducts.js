@@ -5,6 +5,9 @@ import getFieldsLabelsMap from '@salesforce/apex/SF_QliController.getFieldsLabel
 import getEditableFields from '@salesforce/apex/SF_QliController.getEditableFields';
 import updateQlis from '@salesforce/apex/SF_QliController.updateQlis';
 import cloneQli from '@salesforce/apex/SF_QliController.cloneQli';
+import deleteQlis from '@salesforce/apex/SF_QliController.deleteQlis';
+import insertOpQlis from '@salesforce/apex/SF_QliController.insertOpQlis';
+import getOpProducts from '@salesforce/apex/SF_ProductsController.getOpProducts';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import 	showOptionButtonsLabel from '@salesforce/label/c.showOptionButtonsLabel';
 import 	editButtonLabel from '@salesforce/label/c.editButtonLabel';
@@ -20,12 +23,18 @@ import 	dashIconNameLabel from '@salesforce/label/c.dashIconNameLabel';
 import 	addIconNameLabel from '@salesforce/label/c.addIconNameLabel';
 import actionsButtonLabel from '@salesforce/label/c.actionsButtonLabel';
 import cloneButtonLabel from '@salesforce/label/c.cloneButtonLabel';
-
+import deleteIcon from '@salesforce/label/c.deleteIcon';
+import addLabel from '@salesforce/label/c.addLabel';
+import priceLabel from '@salesforce/label/c.priceLabel';
+import quantityLabel from '@salesforce/label/c.quantityLabel';
+import 	nameLabel from '@salesforce/label/c.nameLabel';
+import configureBundleLabel from '@salesforce/label/c.configureBundleLabel';
+import quoteLineItemsUpdateOrCreationError from '@salesforce/label/c.quoteLineItemsUpdateOrCreationError';
 
 const dataTypes = {DOUBLE: 'number', CURRENCY: 'currency', STRING: 'text'};
 
 export default class Sf_addProducts extends LightningElement {
-    staticLabels = {ADD: showOptionButtonsLabel, ACTIONS: actionsButtonLabel, SAVE_BUTTON_LABEL: Save_Label, CANCEL_BUTTON_LABEL: Cancel_Label, DASH_ICON: dashIconNameLabel, ADD_ICON: addIconNameLabel, EDIT_ICON: editIconNameLabel, UNDO_ICON: undoIconNameLabel, CLONE_BUNDLE_PRODUCT: cloneButtonLabel};
+    staticLabels = {ADD: showOptionButtonsLabel, ACTIONS: actionsButtonLabel, SAVE_BUTTON_LABEL: Save_Label, CANCEL_BUTTON_LABEL: Cancel_Label, DASH_ICON: dashIconNameLabel, ADD_ICON: addIconNameLabel, EDIT_ICON: editIconNameLabel, UNDO_ICON: undoIconNameLabel, CLONE_BUNDLE_PRODUCT: cloneButtonLabel, DELETE_ICON: deleteIcon, ADD_LABEL: addLabel, PRICE_LABEL: priceLabel, QUANTITY_LABEL: quantityLabel, NAME_LABEL: nameLabel, CONFIGURE_BUNDLE_LABEL: configureBundleLabel};
     @track qlis = [];
     @track columns = [];
     quoteId;
@@ -39,8 +48,14 @@ export default class Sf_addProducts extends LightningElement {
     @track tableData = [];
     showSaveCancelButtons = false;
     @track qlisToUpdate = [];
+    isModalOpen = false;
     currencyIsoCode = '';
     wiredFieldsMapRes = {};
+    productsData = [];
+    @track productsToDisplay = [];
+    showProductsToDisplay = false;
+    @track productsToAdd = [];
+    bundleQliId = '';
 
 
     @wire(CurrentPageReference)
@@ -71,6 +86,19 @@ export default class Sf_addProducts extends LightningElement {
             this.showAlert('error', getFieldsMapErrorLabel, null);
         }
     }
+
+    @wire(getOpProducts, {quoteId: '$quoteId'})
+    wiredProductsData(result) {
+        if(!!result.data && Array.isArray(result.data)) {
+            result.data.forEach(product => {
+                this.productsData.push({id: product.opProductId, bundleProdId: product.bundleProdId, name: product.productName, price: product.productPrice, quantity: 1, currencyCode: product.currencyCode, priceListItem: product.priceListItem, checked: false, action: 'none'});
+            })
+            console.log('@@@@@productsData: ', this.productsData);
+        } else if(result.error) {
+            this.showAlert('error', result.error, null);
+        }
+    }
+
     /**
     * @author: Jubo M.
     * @description: This method takes care of getting Quote Line Items of the Quote of which record id is in url currently
@@ -360,32 +388,22 @@ export default class Sf_addProducts extends LightningElement {
         this.getQliRecords(this.wiredFieldsMapRes.data);
     }
 
+    handleReprice() {
+        this.getQliRecords(this.wiredFieldsMapRes.data);
+    }
+
     cloneBundleQli(e) {
         this.showSpinner = true;
         let bundleQli = {};
         let opQlis = [];
         this.tableData.forEach(td => {
             if(td.id === e.target.getAttribute('data-key')) {
-                td.data.shift();
-                const fldDataToPass = td.data.filter(el => td.data.indexOf(el) !== 0 && td.data.indexOf(el) !== td.data.length - 1);
-                bundleQli['Product__c'] = td.Product__c;
-                bundleQli['SF_Price_List_Item__c'] = td.SF_Price_List_Item__c;
-                bundleQli['SF_Quote__c'] = this.quoteId;
-                
-                fldDataToPass.forEach(dataItem => {
-                        bundleQli[dataItem.fieldApiName] = dataItem.displayValue.toString();
-                });
+                bundleQli['Id'] = td.id;
                 
                 if(td.Product__r.Stand_Alone__c === false) {
                     td.optionQlis.forEach(opQli => {
-                        const opFldDataToPass = opQli.data.filter(el => opQli.data.indexOf(el) !== 0 && opQli.data.indexOf(el) !== opQli.data.length - 1);
                         let obj = {};
-                        obj['Product__c'] = opQli.Product__c;
-                        obj['SF_Price_List_Item__c'] = opQli.SF_Price_List_Item__c;
-                        obj['SF_Quote__c'] = this.quoteId;
-                        opFldDataToPass.forEach(dataItem => {
-                            obj[dataItem.fieldApiName] = dataItem.displayValue.toString();
-                        });
+                        obj['Id'] = opQli.id;
                         opQlis.push(obj);
                     })
                 }
@@ -399,7 +417,141 @@ export default class Sf_addProducts extends LightningElement {
                 this.showAlert('success', res, null);
                 this.getQliRecords(this.wiredFieldsMapRes.data);
                 this.showSpinner = false;
+            } else {
+                this.showAlert('error', 'Error during cloning qli', null);
+                this.showSpinner = false;
+            }
+        });
+    }
+
+    removeQlis(e) {
+        console.log('table data: ', this.tableData);
+        this.showSpinner = true;
+        const qlisToDelete = [];
+        console.log('@@@@@qli to delete: ', e.target.getAttribute('data-key'))
+        qlisToDelete.push(e.target.getAttribute('data-key'));
+        if(e.target.dataset.isBundle === 'true') {
+            console.log('@@@@entered in false standalone: ')
+            this.tableData.forEach(qli => {
+                if(qli.id === e.target.getAttribute('data-key') && qli.Product__r.Stand_Alone__c === false) {
+                    qli.optionQlis.forEach(opQli => {
+                        qlisToDelete.push(opQli.id);
+                    })
+                }
+            });
+        }
+
+        deleteQlis({qlisIds: qlisToDelete}).then(res => {
+            if(!!res) {
+                this.showSpinner = true;
+                this.getQliRecords(this.wiredFieldsMapRes.data);
+                this.showAlert('success', res, null);
+            }
+        }).catch(err => {
+            this.showAlert('error', error.body.message, null);
+            this.showSpinner = false;
+        })
+    }
+
+    configureBundle(e) {
+        this.productsToDisplay = [];
+        this.productsToAdd = [];
+        console.log('@@@@@productsData: ', this.productsData);
+        this.productsData.forEach(product => {
+            if(product.bundleProdId === e.target.getAttribute('data-key')) {
+                product.checked = false;
+                this.productsToDisplay.push(product);
+                console.log('@@@ 462 got data set: ', e.target.dataset.bundleQliId);
+                this.bundleQliId = e.target.dataset.bundleQliId;
+            }
+        });
+
+        console.log('@@@@ 467 prducts to display: ', this.productsToDisplay);
+
+        this.isModalOpen = true;
+        this.showProductsToDisplay = true;
+    }
+
+    handleQtyChange(e) {
+        this.productsToDisplay.forEach(product => {
+            if(product.id === e.target.getAttribute('data-key')) {
+                product.quantity = e.target.value;
             }
         })
     }
+
+    markProductToAdd(e) {
+        this.productsToDisplay.forEach(product => {
+            console.log('@@@@ 484 product to display: ', product);
+            if(product.id === e.target.getAttribute('data-key')) {
+                console.log('@@@@ 486 product: ', product);
+                product.checked = !product.checked;
+
+                if(product.checked === true) {
+                    this.productsToAdd.push(product);
+                    console.log('@@@@ 491 productsToAdd: ', this.productsToAdd);
+                } else {
+                    this.productsToAdd = this.productsToAdd.filter(prod => prod.id !== product.id);
+                    console.log('@@@@ 494 productsToAdd: ', this.productsToAdd);
+                }
+            }
+        })
+    }
+
+    addProductToBundleQli(e) {
+        const prodsToQlisDataArray = [];
+
+        this.tableData.forEach(td => {
+            if(td.Product__r.Stand_Alone__c === false && td.optionQlis.length > 0) {
+                console.log('@@@@@ 500 productsToAdd', this.productsToAdd);
+                this.productsToAdd.forEach(product => {
+                    td.optionQlis.forEach(opQli => {
+                            if(opQli.Product__c === product.id) {
+                                opQli.data.forEach(fldData => {
+                                    if(fldData.fieldApiName === 'Quantity__c') {
+                                        let prodToQliDataObj = {recordId: opQli.id, productId: null, priceListItemId: null, quantity: parseInt(product.quantity), quoteLineItemId: null, action: 'update'};
+
+                                        prodsToQlisDataArray.push(prodToQliDataObj);
+                                    }
+                                });
+                                this.productsToAdd = this.productsToAdd.filter(prod => prod.id !== product.id);
+                            } 
+                    })
+                })
+            }
+        });
+
+        if(prodsToQlisDataArray.length > 0) {
+            if(this.productsToAdd.length > 0) {
+                this.productsToAdd.forEach(product => {
+                    let prodToQliObj = {recordId: null, productId: product.id, priceListItemId: product.priceListItem,quantity: parseInt(product.quantity), quoteLineItemId: this.bundleQliId, action: 'insert'};
+                    
+                    prodsToQlisDataArray.push(prodToQliObj);
+                });
+            }
+
+            insertOpQlis({prodsToQlisData: prodsToQlisDataArray, quoteId: this.quoteId}).then(res => {
+                if(!!res && typeof(res) === 'string') {
+                    this.showAlert('success', null, res, null);
+                    this.getQliRecords(this.wiredFieldsMapRes.data);
+                } else {
+                    this.showAlert('error', quoteLineItemsUpdateOrCreationError, null);
+                }
+            }).catch(error => {
+                if(!error.body.message) {
+                    this.showAlert('error', quoteLineItemsUpdateOrCreationError, null);
+                } else {
+                    this.showAlert('error', error.body.message, null);
+                }
+            });
+
+            this.isModalOpen = false;
+        }
+    }
+
+    closeModal() {
+        this.isModalOpen = false;
+        this.productsToDisplay = [];
+    }
+
 }

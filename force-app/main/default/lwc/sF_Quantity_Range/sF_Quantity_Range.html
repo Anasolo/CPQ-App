@@ -1,0 +1,84 @@
+<template>
+    <lightning-quick-action-panel header="Configure Price Ranges">
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Range</th>
+                    <th>Quantity From</th>
+                    <th>Quantity To</th>
+                    <th>Price</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <template if:true={loading}>
+                    <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+                </template>
+                <template if:false={loading}>
+                    <template for:each={priceRanges} for:item="item" for:index="index">
+                        <tr key={item.Id}>
+                            <td></td>
+                            <td>
+                                <lightning-input type="number" onchange={handleChange} variant="label-hidden"
+                                    name="Range" data-id={index} value={item.Range__c}
+                                    read-only="true"></lightning-input>
+                            </td>
+                            <td>
+                                <lightning-input type="number" onchange={handleChange} variant="label-hidden"
+                                    name="QuantityFrom" data-id={index} value={item.Quantity_From__c}
+                                    read-only="true"></lightning-input>
+                            </td>
+                            <td>
+                                <lightning-input type="number" onchange={handleChange} variant="label-hidden"
+                                    name="Quantity_To__c" data-id={index} value={item.Quantity_To__c} read-only="true">
+                                </lightning-input>
+                            </td>
+                            <td>
+                                <lightning-input type="number" onchange={handleChange} variant="label-hidden"
+                                    name="Price__c" data-id={index} value={item.Price__c} read-only="true">
+                                </lightning-input>
+                            </td>
+                            <td>
+                                <lightning-button-icon data-id={index} icon-name="utility:record_update"
+                                    alternative-text="edit" title="editRecord" onclick={handleChange}>
+                                </lightning-button-icon>
+                            </td>
+                            <td>
+                                <lightning-button-icon data-id={index} icon-name="utility:delete"
+                                    alternative-text="delete" title="deleteRecord" onclick={handleDelete}>
+                                </lightning-button-icon>
+                            </td>
+                        </tr>
+                    </template>
+                </template>
+                <tr>
+                    <td>
+                        <lightning-button-icon icon-name="utility:add" alternative-text="AddRecord" title="AddRecord"
+                            onclick={handleAdd}></lightning-button-icon>
+                    </td>
+                    <td>
+                        <lightning-input type="number" variant="label-hidden" onchange={handleChange}>
+                        </lightning-input>
+                    </td>
+                    <td>
+                        <lightning-input type="number" variant="label-hidden" onchange={handleQuanityFromChange}>
+                        </lightning-input>
+                    </td>
+                    <td>
+                        <lightning-input type="number" variant="label-hidden" onchange={handleQuanityToChange}>
+                        </lightning-input>
+                    </td>
+                    <td>
+                        <lightning-input type="number" variant="label-hidden" onchange={handlePriceChange}>
+                        </lightning-input>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div slot="footer">
+            <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-left_x-small">
+            </lightning-button>
+        </div>
+    </lightning-quick-action-panel>
+</template>

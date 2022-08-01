@@ -17,3 +17,16 @@ td {
     z-index: 1000;
     margin-bottom: 1000px;
 }
+
+.table-tr {
+    height: 30px;
+}
+
+.white {
+    background-color: white;
+}
+
+.noBorder {
+    border: none;
+    width: 100%;
+}

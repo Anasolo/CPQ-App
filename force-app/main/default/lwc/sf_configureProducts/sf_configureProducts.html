@@ -2,12 +2,12 @@
     <div if:true={showSpinner} class="slds-is-relative">
         <lightning-spinner class="slds-is-fixed" alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
     </div>
-    <c-sf_look-up-component object-name="Product2" field-name="Name" label="Products Search" placeholder="Search product" icon-name="standard:account" onaddproductsevent={handleAddproductsFromLookup} class="slds-m-bottom_large">
+<c-sf_look-up-component object-name="Product2" field-name="Name" label="Products Search" placeholder="Search product" icon-name="standard:account" onaddproductsevent={handleAddproductsFromLookup} onrepriceevent={handleAddproductsFromLookup} class="slds-m-bottom_large">
     </c-sf_look-up-component>
     <template if:true={showDataTable}>
         <lightning-card class="slds-m-top_large">
             <table>
-                <tr>
+                <tr class="table-tr">
                   <template for:each={fieldLabels} for:item="label" for:index="index"> 
                     <th class="slds-p-left_small" key={label.index}>
                         {label}
@@ -15,7 +15,7 @@
                   </template>
                 </tr>
                 <template for:each={tableData} for:item="td" for:index="i"> 
-                    <tr key={td.id}>
+                    <tr class="table-tr" key={td.id}>
                             <template for:each={td.data} for:item="fldData" for:index="index">
                                 <td class="slds-p-left_small" key={fldData.index}>
                                     <template if:true={fldData.isInput}>
@@ -41,10 +41,24 @@
                                             <template if:true={td.Product__r.Stand_Alone__c}>
                                                 <lightning-icon size="x-small" data-key={td.id} data-is-bundle={fldData.isBundle} onclick={handleOptionsVisibility} data-button-label={staticLabels.ACTIONS}  icon-name={staticLabels.EDIT_ICON} alternative-text="Edit" title="Edit">
                                                 </lightning-icon>
+
+                                                <lightning-icon class="slds-m-left_x-small" icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" data-key={td.id} onclick={cloneBundleQli}>
+                                                </lightning-icon>
+    
+                                                <lightning-icon class="slds-m-left_x-small" data-is-bundle=true icon-name={staticLabels.DELETE_ICON} size="x-small" data-key={td.id} onclick={removeQlis}>
+                                                </lightning-icon>
                                             </template>
 
-                                            <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" data-key={td.id} onclick={cloneBundleQli}>
-                                            </lightning-icon>
+                                            <template if:false={td.Product__r.Stand_Alone__c}>
+                                                <lightning-icon icon-name={staticLabels.CLONE_BUNDLE_PRODUCT} size="x-small" data-key={td.id} onclick={cloneBundleQli}>
+                                                </lightning-icon>
+    
+                                                <lightning-icon class="slds-m-left_x-small" data-is-bundle=true icon-name={staticLabels.DELETE_ICON} size="x-small" data-key={td.id} onclick={removeQlis}>
+                                                </lightning-icon>
+
+                                                <lightning-icon class="slds-m-left_x-small" data-is-bundle=true icon-name="utility:setup" size="x-small" data-key={td.Product__c} data-bundle-qli-id={td.id} onclick={configureBundle}>
+                                                </lightning-icon>
+                                            </template>
                                         </template>
                                     </template>
                                 </td>
@@ -53,14 +67,14 @@
     
                         <template if:true={td.showOptionQlis}>
                             <table key={td.id} class="test2">
-                                <tr>
+                                <tr class="table-tr">
                                     <template for:each={optionQlisFieldLabels} for:item="opLabel" for:index="i">
                                         <th class="slds-p-left_small" key={opLabel.i}>{opLabel}</th>
                                     </template>
                                 </tr>
     
                                 <template for:each={td.optionQlis} for:item="opQli">
-                                    <tr key={opQli.id} class="test1">
+                                    <tr class="table-tr" key={opQli.id}>
                                         <template for:each={opQli.data} for:item="opFldData" for:index="j">
                                             <td class="slds-p-left_small" key={opFldData.j}>
                                                  <template if:true={opFldData.isInput}>
@@ -74,6 +88,9 @@
                                             <template if:false={opFldData.isInput}>
                                                 <template if:false={opFldData.buttonIsAdd}>
                                                     <lightning-icon size="x-small" data-key={opQli.id} data-is-bundle={opFldData.isBundle} onclick={handleOptionsVisibility} data-button-label={staticLabels.ACTIONS}  icon-name={staticLabels.EDIT_ICON} alternative-text="Edit" title="Edit">
+                                                    </lightning-icon>
+
+                                                    <lightning-icon class="slds-m-left_x-small" size="x-small" data-key={opQli.id} data-is-bundle={opFldData.isBundle} data-button-label={staticLabels.ACTIONS}  icon-name={staticLabels.DELETE_ICON} alternative-text="Delete" title="Delete" onclick={removeQlis}>
                                                     </lightning-icon>
                                                 </template>
                                             </template>
@@ -93,5 +110,71 @@
             <lightning-button label={staticLabels.CANCEL_BUTTON_LABEL} onclick={refreshComponent}></lightning-button>
             <lightning-button label={staticLabels.SAVE_BUTTON_LABEL} onclick={updateQliRecords} variant="brand"></lightning-button>
         </lightning-layout>
+    </template>
+
+    <template if:true={isModalOpen}>
+        <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container slds-p-around_large">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close"
+                            alternative-text="close"
+                            variant="inverse"
+                            size="small" >
+                       </lightning-icon>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{staticLabels.CONFIGURE_BUNDLE_LABEL}</h2>
+                </header>
+                    <template if:true={showProductsToDisplay}>
+                        <div class="white">
+                            <table>
+                                <tr>
+                                    <th>
+                                        {staticLabels.ADD_LABEL}
+                                    </th>
+                                    <th>
+                                        {staticLabels.NAME_LABEL}
+                                    </th>
+        
+                                    <th>
+                                        {staticLabels.PRICE_LABEL}
+                                    </th>
+        
+                                    <th>
+                                        {staticLabels.QUANTITY_LABEL}
+                                    </th>
+                                </tr>
+    
+                                <template for:each={productsToDisplay} for:item="product">
+                                    <tr key={product.id}>
+                                        <td>
+                                            <lightning-input type="checkbox-button" onchange={markProductToAdd} data-key={product.id}>
+                                            </lightning-input>
+                                        </td>
+
+                                        <td>
+                                            {product.name}
+                                        </td>
+        
+                                        <td>
+                                            <lightning-formatted-number  value={product.price} disabled=true formatter={product.currencyCode} format-style="currency" currency-code={product.currencyCode}>
+                                            </lightning-formatted-number>
+                                        </td>
+        
+                                        <td>
+                                            <input class="noBorder" type="number" value={product.quantity} data-key={product.id} onchange={handleQtyChange}>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </table>
+                        </div>
+                    </template>
+                <footer class="slds-modal__footer">
+                    <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">{staticLabels.CANCEL_BUTTON_LABEL}</button>
+                    <button class="slds-button slds-button_neutral" onclick={addProductToBundleQli} title="Cancel">{staticLabels.SAVE_BUTTON_LABEL}</button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
     </template>
 </template>

@@ -15,6 +15,12 @@
             onclick={CallAcceptQuote}
             label={acceptQuote}>
         </lightning-button>
+
+        <lightning-button class="slds-m-right_small" variant="brand"
+            title="Reprice" 
+            label="Reprice"
+            onclick={doReprice}>
+        </lightning-button>
    </div>
  <!--Use template if:true to display/hide popup based on isModalOpen value--> 
  <template if:true={isModalOpen}>
